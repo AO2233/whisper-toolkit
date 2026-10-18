@@ -1,0 +1,34 @@
+# Downloaded models and local runtime (recreated with setup.cmd).
+/models/
+/sensevoice/.venv/
+/whisper.cpp/
+
+# Private transcripts and generated media/subtitles.
+/transcripts/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.flac
+*.ogg
+*.mkv
+*.srt
+*.vtt
+*.lrc
+
+# Caches, build output, and temporary downloads.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-*/
+build/
+dist/
+*.part
+*.tmp
+*.log
+.venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
