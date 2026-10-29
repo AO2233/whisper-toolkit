@@ -49,7 +49,7 @@ class TerminalDisplayTests(unittest.TestCase):
         display, stream = self.make_display()
         with patch("terminal_display.shutil.get_terminal_size", return_value=os.terminal_size((8, 24))):
             display.update("最初的文本\n中文abc")
-        self.assertEqual(stream.getvalue(), "\x1b[90m中文abc\x1b[0m")
+        self.assertEqual(stream.getvalue(), "\x1b[38;5;246m中文abc\x1b[0m")
 
     def test_redirected_output_contains_only_final_text(self):
         stream = io.StringIO()
@@ -70,7 +70,7 @@ class TerminalDisplayTests(unittest.TestCase):
         display, stream = self.make_display()
         with patch("terminal_display.shutil.get_terminal_size", return_value=os.terminal_size((30, 24))):
             display.update("当前句子")
-        self.assertEqual(stream.getvalue(), "\x1b[90m          当前句子\x1b[0m")
+        self.assertEqual(stream.getvalue(), "\x1b[38;5;246m          当前句子\x1b[0m")
 
     def test_short_pauses_keep_sentences_together(self):
         stream = io.StringIO()

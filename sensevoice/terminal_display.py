@@ -5,6 +5,9 @@ import sys
 import unicodedata
 from datetime import datetime
 
+# Live preview: fixed mid-gray (#949494). SGR 90 maps to ~#555 in many dark themes and is hard to read.
+PREVIEW = "\x1b[38;5;246m"
+
 
 def _enable_ansi(stream):
     if os.name != "nt":
@@ -71,7 +74,7 @@ class TerminalDisplay:
             return
         output = self._erase()
         if preview:
-            output += f"\x1b[90m{preview}\x1b[0m" if self.ansi else preview
+            output += f"{PREVIEW}{preview}\x1b[0m" if self.ansi else preview
         self.stream.write(output)
         self.stream.flush()
         self.current, self.width = preview, width
