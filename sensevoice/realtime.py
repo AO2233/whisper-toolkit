@@ -138,13 +138,9 @@ def main():
     import numpy as np
     import sherpa_onnx
 
-    recognizer, model = load_sensevoice(sherpa_onnx, provider, args.lang, int8=args.cpu)
+    recognizer, _ = load_sensevoice(sherpa_onnx, provider, args.lang, int8=args.cpu)
     # live text: SenseVoice (~25 ms); finalized sentence: Fun-ASR-Nano (~0.5-2 s, more accurate)
     nano = None if args.fast or args.cpu or not NANO_DIR.exists() else load_nano(sherpa_onnx, provider)
-    if nano is not None:
-        model = f"{model.relative_to(ROOT)} + {NANO_DIR.relative_to(ROOT)}"
-    else:
-        model = model.relative_to(ROOT)
 
     config = sherpa_onnx.VadModelConfig()
     config.silero_vad.model = str(VAD_MODEL)
@@ -164,7 +160,6 @@ def main():
     out_dir = Path(args.outdir)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"realtime-{datetime.now():%Y%m%d-%H%M%S}.txt"
-    print(f"{source} | {model} on {provider} | saving to {out_file}")
 
     agc = AutoGain()
     display = TerminalDisplay()
@@ -178,6 +173,7 @@ def main():
     live_from = 0   # absolute sample where the live (in-progress) text starts
     started = False
     started_time = None
+    last_speech_end = None
 
     def cut(start, end=None):
         a = max(start - hist_base, 0)
@@ -240,14 +236,16 @@ def main():
                         when = datetime.now()
                         fout.write(f"[{when:%H:%M:%S}] {text}\n")
                         fout.flush()
-                        display.finalize(f"[{when:%Y-%m-%d %H:%M:%S}] {text}")
+                        gap = 0.0 if last_speech_end is None else (seg_start - last_speech_end) / SR
+                        display.finalize(text, when=when, gap=gap)
+                        last_speech_end = seg_end
                     else:
                         display.finalize("")
                     started = False
                     started_time = None
         except KeyboardInterrupt:
             display.close()
-            print(f"\nStopped. Transcript: {out_file}")
+            print(f"Saved: {out_file}")
         finally:
             display.close()
 

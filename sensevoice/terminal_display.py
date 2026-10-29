@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import unicodedata
+from datetime import datetime
 
 
 def _enable_ansi(stream):
@@ -48,6 +49,7 @@ class TerminalDisplay:
         self.ansi = self.interactive and _enable_ansi(self.stream)
         self.current = ""
         self.width = 0
+        self.has_final_text = False
 
     def _erase(self):
         if not self.current:
@@ -59,7 +61,12 @@ class TerminalDisplay:
     def update(self, text):
         if not self.interactive:
             return
-        preview, width = _preview(text, shutil.get_terminal_size().columns)
+        columns = shutil.get_terminal_size().columns
+        indent = " " * 10 if columns > 11 else ""
+        preview, width = _preview(text, columns - len(indent))
+        if preview:
+            preview = indent + preview
+            width += len(indent)
         if preview == self.current:
             return
         output = self._erase()
@@ -69,10 +76,15 @@ class TerminalDisplay:
         self.stream.flush()
         self.current, self.width = preview, width
 
-    def finalize(self, text):
+    def finalize(self, text, when=None, gap=0.0):
         output = self._erase()
         if text:
-            output += text + "\n"
+            if self.has_final_text and gap >= 3.0:
+                output += "\n"
+            timestamp = (when if when is not None else datetime.now()).strftime("%H:%M:%S")
+            prefix = f"\x1b[90m{timestamp}\x1b[0m" if self.ansi else timestamp
+            output += f"{prefix}  {text}\n"
+            self.has_final_text = True
         if output:
             self.stream.write(output)
             self.stream.flush()
