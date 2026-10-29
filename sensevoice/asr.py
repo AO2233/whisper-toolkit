@@ -98,11 +98,22 @@ class AutoGain:
 
 def add_cuda_dll_dirs():
     # CUDA 12 runtime / cuBLAS / cuDNN shipped as nvidia-* pip packages inside the venv
-    site = Path(sys.prefix) / "Lib" / "site-packages" / "nvidia"
-    dirs = [d for d in glob.glob(str(site / "*" / "bin"))]
-    for d in dirs:
-        os.add_dll_directory(d)
-    os.environ["PATH"] = os.pathsep.join(dirs + [os.environ.get("PATH", "")])
+    if os.name == "nt":
+        site = Path(sys.prefix) / "Lib" / "site-packages" / "nvidia"
+        dirs = [d for d in glob.glob(str(site / "*" / "bin"))]
+        for d in dirs:
+            os.add_dll_directory(d)
+        os.environ["PATH"] = os.pathsep.join(dirs + [os.environ.get("PATH", "")])
+    else:
+        # LD_LIBRARY_PATH is only read at process start, so preload the libraries instead;
+        # onnxruntime's CUDA provider then finds them already loaded by soname.
+        import ctypes
+        import sysconfig
+        site = Path(sysconfig.get_paths()["purelib"]) / "nvidia"
+        for lib in ("cuda_runtime/lib/libcudart.so.*", "cublas/lib/libcublasLt.so.*",
+                    "cublas/lib/libcublas.so.*", "curand/lib/libcurand.so.*", "cudnn/lib/libcudnn*.so.*"):
+            for f in sorted(glob.glob(str(site / lib))):
+                ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
     # sm_120 kernels are JIT-compiled from PTX on first run (~45 s); keep them in the driver cache
     os.environ.setdefault("CUDA_CACHE_MAXSIZE", str(4 * 1024 ** 3))
 

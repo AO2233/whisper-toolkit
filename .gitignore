@@ -1,6 +1,7 @@
 # Downloaded models and local runtime (recreated with setup.cmd).
 /models/
 /sensevoice/.venv/
+/sensevoice/.venv-linux/
 /whisper.cpp/
 
 # Private transcripts and generated media/subtitles.

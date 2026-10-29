@@ -56,8 +56,12 @@ def open_loopback(sc, speaker):
     stop = threading.Event()
 
     def run():
-        ctypes.windll.ole32.CoInitializeEx(None, 0)   # COM is per-thread; WASAPI needs it
-        with sc.get_microphone(id=str(speaker.name), include_loopback=True).recorder(
+        if os.name == "nt":
+            ctypes.windll.ole32.CoInitializeEx(None, 0)   # COM is per-thread; WASAPI needs it
+            source = str(speaker.name)
+        else:
+            source = f"{speaker.id}.monitor"   # PulseAudio/PipeWire monitor source of the sink
+        with sc.get_microphone(id=source, include_loopback=True).recorder(
                 samplerate=rate, channels=1, blocksize=block) as rec:
             while not stop.is_set():
                 q.put(rec.record(numframes=block)[:, 0])

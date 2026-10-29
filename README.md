@@ -1,6 +1,6 @@
 # whisper-toolkit
 
-Windows 语音转文字工具：Whisper large-v3 文件转写、SenseVoice 快速转写、Fun-ASR-Nano 逐句修正，以及麦克风/电脑声音实时转写。默认面向 NVIDIA GPU，支持 CPU 模式。
+Windows / Linux 语音转文字工具：Whisper large-v3 文件转写、SenseVoice 快速转写、Fun-ASR-Nano 逐句修正，以及麦克风/电脑声音实时转写。默认面向 NVIDIA GPU，支持 CPU 模式。
 
 实时输出统一使用极简会议样式：深灰 `时:分:秒` 时间戳，正文不加序号或方括号；灰字预览与正文对齐，只更新当前识别行，定稿后追加到终端。连续发言紧接排列，音频停顿至少 3 秒后空一行分段；安静时保持静止。启动时不显示标题和模型路径，退出时才显示保存位置。实时记录保存到 `transcripts/`。
 
@@ -42,9 +42,24 @@ Whisper 的三个文件转写入口还需要 Visual Studio C++ Build Tools、CMa
 
 首次编译自动从 [whisper.cpp 上游](https://github.com/ggml-org/whisper.cpp) 拉取源码，并检出 `whisper-version.txt` 中记录的提交。已有源码目录会保留。第三方源码和编译产物不复制进本仓库。
 
+### Linux
+
+同一份仓库可在 Windows 和 Linux 间共用：每个 `.cmd` 都有同名 `.sh`，参数相同。Linux 使用独立的 `sensevoice/.venv-linux` 和 `whisper.cpp/build-linux`，与 Windows 的 `.venv`、`build` 并存；`models/` 两边共享。
+
+```bash
+sudo apt install ffmpeg cmake ninja-build libportaudio2 pipewire-pulse
+sudo apt install cuda-toolkit-13-4   # 需先添加 NVIDIA CUDA apt 源；仅 Whisper GPU 编译需要
+./setup.sh                           # 有 uv 时自动准备 Python 3.14；--cpu、--models sensevoice,nano
+./build.sh                           # CUDA，默认 sm_120；CPU：./build.sh cpu
+./whisper.sh meeting.m4a -Lang zh
+./realtime-system.sh                 # 录制 PulseAudio/PipeWire 输出设备的 monitor
+```
+
+在 Windows 上 git 默认不记录可执行位，提交新的 `.sh` 时用 `git update-index --chmod=+x *.sh`。
+
 ## 选择入口
 
-文件可以直接拖到对应 `.cmd`，也可以传入文件或文件夹路径。文件转写默认在源文件旁输出 `.srt` 和 `.txt`。
+文件可以直接拖到对应 `.cmd`（Linux 为 `.sh`），也可以传入文件或文件夹路径。文件转写默认在源文件旁输出 `.srt` 和 `.txt`。
 
 | 用途 | 入口 | 模型 |
 |---|---|---|
